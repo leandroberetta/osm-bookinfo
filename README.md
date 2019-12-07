@@ -3,8 +3,8 @@
 # Prerequisites
 
 * OpenShift 4.1 or higher
-* OpenShift Service Mesh 1.0 or higher installed in bookretail-istio-system namespace
-* BookInfo application deployed in bookinfo namespace
+* OpenShift Service Mesh 1.0 already installed
+* BookInfo application already installed
 
 # Usage
 
@@ -20,4 +20,3 @@
 * CLI: https://api.cluster-7ce3.7ce3.sandbox1541.opentlc.com:6443
 * Admin's Username: admin
 * Admin's Password: r3dh4t1!
-

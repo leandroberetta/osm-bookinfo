@@ -4,6 +4,8 @@ export SUBDOMAIN_BASE=apps.cluster-7ce3.7ce3.sandbox1541.opentlc.com
 export BOOKINFO_NAMESPACE=bookinfo
 export ISTIO_SYSTEM_NAMESPACE=bookretail-istio-system
 
+# Control Plane
+
 echo "apiVersion: maistra.io/v1
 kind: ServiceMeshControlPlane
 metadata:
@@ -48,6 +50,8 @@ spec:
       jaeger:
         template: all-in-one" | oc apply -f - -n $ISTIO_SYSTEM_NAMESPACE
 
+# Member Roll
+
 echo "apiVersion: maistra.io/v1
 kind: ServiceMeshMemberRoll
 metadata:
@@ -57,12 +61,16 @@ spec:
   members:
     - $BOOKINFO_NAMESPACE" | oc apply -f - -n $ISTIO_SYSTEM_NAMESPACE
 
+# Automatic Envoy Injection
+
 oc patch deployment details-v1 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
 oc patch deployment productpage-v1 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
 oc patch deployment ratings-v1 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
 oc patch deployment reviews-v1 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
 oc patch deployment reviews-v2 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
 oc patch deployment reviews-v3 -p "{\"spec\": { \"template\": { \"metadata\": { \"annotations\": { \"sidecar.istio.io/inject\": \"true\"}}}}}" -n $BOOKINFO_NAMESPACE
+
+# Gateway
 
 cat <<EOF | tee ./cert.cfg
 [ req ]
@@ -111,7 +119,9 @@ spec:
       privateKey: /etc/istio/ingressgateway-certs/tls.key
       serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
     hosts:
-    - \"*.$SUBDOMAIN_BASE\"" | oc apply -f - -n $BOOKINFO_NAMESPACE
+    - \"*.$SUBDOMAIN_BASE\"" | oc apply -f - -n $ISTIO_SYSTEM_NAMESPACE
+
+# Product Page
 
 echo "apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
@@ -123,16 +133,6 @@ spec:
       mode: STRICT
   targets:
   - name: productpage" | oc apply -f - -n $BOOKINFO_NAMESPACE
-
-echo "apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: productpage-destination-rule
-spec:
-  host: productpage.bookinfo.svc.cluster.local
-  trafficPolicy:
-    tls:
-      mode: ISTIO_MUTUAL" | oc apply -f - -n $BOOKINFO_NAMESPACE
 
 echo "apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -153,6 +153,16 @@ spec:
           number: 9080
         host: productpage.bookinfo.svc.cluster.local" | oc apply -f - -n $BOOKINFO_NAMESPACE
 
+echo "apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: productpage-destination-rule
+spec:
+  host: productpage.bookinfo.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
 echo "apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -172,3 +182,72 @@ spec:
     name: istio-ingressgateway
     weight: 100
   wildcardPolicy: None" | oc apply -f - -n $ISTIO_SYSTEM_NAMESPACE
+
+# Details
+
+echo "apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: details-destination-rule
+spec:
+  host: details.bookinfo.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
+echo "apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: details-policy
+spec:
+  peers:
+  - mtls:
+      mode: STRICT
+  targets:
+  - name: details" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
+# Reviews
+
+echo "apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews-destination-rule
+spec:
+  host: reviews.bookinfo.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
+echo "apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: reviews-policy
+spec:
+  peers:
+  - mtls:
+      mode: STRICT
+  targets:
+  - name: reviews" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
+# Ratings
+
+echo "apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: ratings-destination-rule
+spec:
+  host: ratings.bookinfo.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL" | oc apply -f - -n $BOOKINFO_NAMESPACE
+
+echo "apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: ratings-policy
+spec:
+  peers:
+  - mtls:
+      mode: STRICT
+  targets:
+  - name: ratings" | oc apply -f - -n $BOOKINFO_NAMESPACE
