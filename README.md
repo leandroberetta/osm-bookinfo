@@ -1,4 +1,4 @@
-# BookInfo Application Using OpenShift Service Mesh (Istio)
+# BookInfo Application Using OpenShift Service Mesh (Istio)
 
 # Prerequisites
 
@@ -6,7 +6,7 @@
 * OpenShift Service Mesh 1.0 already installed
 * BookInfo application already installed
 
-# Usage
+# Usage
 
     export SUBDOMAIN_BASE=apps.cluster-7ce3.7ce3.sandbox1541.opentlc.com
     export BOOKINFO_NAMESPACE=bookinfo
@@ -14,7 +14,7 @@
 
     sh configure_mesh.sh
 
-# OpenShift Cluster
+# OpenShift Cluster
 
 * UI: https://console-openshift-console.apps.cluster-7ce3.7ce3.sandbox1541.opentlc.com
 * CLI: https://api.cluster-7ce3.7ce3.sandbox1541.opentlc.com:6443
